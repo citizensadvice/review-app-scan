@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "review-app-scan"
-version = "0.1.0"
+version = "1.1.0"
 description = ""
 authors = ["Matthew Cane <matthew.cane@citizensadvice.org.uk>"]
 readme = "README.md"
 packages = [{include = "review_app_scan"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 kubernetes = "^27.2.0"
 argparse = "^1.4.0"
 
