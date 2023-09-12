@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "review-app-scan"
+version = "0.1.0"
+description = ""
+authors = ["Matthew Cane <matthew.cane@citizensadvice.org.uk>"]
+readme = "README.md"
+packages = [{include = "review_app_scan"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+kubernetes = "^27.2.0"
+argparse = "^1.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+scan = "review_app_scan.__main__:main"
