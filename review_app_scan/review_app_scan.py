@@ -15,6 +15,25 @@ def get_namespaces() -> list[str]:
     return namespaces
 
 
+def get_subnamespaces(namespace: str) -> list[str]:
+    """Returns a string list of all the subnamespaces in the given namespace."""
+
+    print("> Getting subnamespaces...")
+    api = k8s.CustomObjectsApi()
+    subnamespaces = [
+        namespace.metadata.name
+        for namespace in api.list_namespaced_custom_object(
+            group="hnc.x-k8s.io",
+            version="apiextensions.k8s.io/v1",
+            namespace=namespace,
+            plural="subnamespaceanchors",
+        ).items
+    ]
+    logging.debug(f"> {subnamespaces=}")
+    print(f"> Found  {len(subnamespaces)} namespaces.")
+    return subnamespaces
+
+
 def get_helm_chart(namespace: str) -> dict[Any]:
     """Returns a dictionary of the helm chart for the given namespace"""
     logging.debug(f"> Getting helm charts for {namespace}...")
@@ -72,6 +91,10 @@ def get_arguments() -> dict:
         type=str,
     )
     argparser.add_argument(
+        "namespace",
+        type=str,
+    )
+    argparser.add_argument(
         "--max-age",
         required=False,
         type=int,
@@ -100,7 +123,9 @@ def main():
     current_time = datetime.now(timezone.utc)
     to_be_deleted = []
 
-    review_app_namespaces = filter_namespaces(get_namespaces(), args.review_app_name)
+    review_app_namespaces = filter_namespaces(
+        get_subnamespaces(args.namespace), args.review_app_name
+    )
     logging.info(
         f"> Searching for reviews apps not updated for at least {args.max_age} hours..."
     )
