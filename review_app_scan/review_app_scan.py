@@ -1,58 +1,48 @@
+import argparse, re, json, subprocess, logging
 from datetime import datetime, timezone, timedelta
-from kubernetes import client as k8s, config
-import argparse, re, json, subprocess, dateutil, logging
+from dateutil import parser
+from tqdm import tqdm
 from typing import Any
 
 
-def get_namespaces() -> list[str]:
-    """Returns a string list of all the namespaces in the cluster."""
+def run_subprocess(command: str):
+    """Runs a subprocess and returns the stdout as a dict. Expects JSON compatable response to command."""
 
-    print("> Getting namespaces...")
-    api = k8s.CoreV1Api()
-    namespaces = [namespace.metadata.name for namespace in api.list_namespace().items]
-    logging.debug(f"> {namespaces=}")
-    print(f"> Found  {len(namespaces)} namespaces.")
-    return namespaces
+    result = subprocess.run(
+        command.split(" "),
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    logging.debug(f"> {result=}")
+    try:
+        response_dict = json.loads(result)
+    except json.decoder.JSONDecodeError:
+        print(f"> Error: Could not parse response from '{command}' as JSON")
+        raise
+    return response_dict
 
 
 def get_subnamespaces(namespace: str) -> list[str]:
     """Returns a string list of all the subnamespaces in the given namespace."""
-
+    subnamespaces = []
     print("> Getting subnamespaces...")
-    api = k8s.CustomObjectsApi()
-    subnamespaces = [
-        namespace.metadata.name
-        for namespace in api.list_namespaced_custom_object(
-            group="hnc.x-k8s.io",
-            version="apiextensions.k8s.io/v1",
-            namespace=namespace,
-            plural="subnamespaceanchors",
-        ).items
-    ]
+    response = run_subprocess(
+        f"kubectl get --namespace {namespace} subnamespaceanchors.hnc.x-k8s.io -o json"
+    )
+    for items in response["items"]:
+        subnamespaces.append(items["metadata"]["name"])
     logging.debug(f"> {subnamespaces=}")
-    print(f"> Found  {len(subnamespaces)} namespaces.")
+    print(f"> Found  {len(subnamespaces)} subnamespaces in namespace {namespace}.")
     return subnamespaces
 
 
 def get_helm_chart(namespace: str) -> dict[Any]:
     """Returns a dictionary of the helm chart for the given namespace"""
     logging.debug(f"> Getting helm charts for {namespace}...")
-    result = subprocess.run(
-        [
-            "helm",
-            "list",
-            "--namespace",
-            namespace,
-            "-o",
-            "json",
-            "--time-format",
-            "2006-01-02T15:04:05Z07:00",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,  # Check for command execution success
+    helm_data = run_subprocess(
+        f"helm list --namespace {namespace} -o json --time-format=2006-01-02T15:04:05Z07:00"
     )
-    helm_data = json.loads(result.stdout)
     logging.debug(f"> {namespace}_{helm_data=}")
     if len(helm_data) != 1:
         print(f"> Error: Expected 1 chart for {namespace}")
@@ -119,7 +109,6 @@ def get_arguments() -> dict:
 
 def main():
     args = get_arguments()
-    config.load_kube_config()
     current_time = datetime.now(timezone.utc)
     to_be_deleted = []
 
@@ -129,12 +118,15 @@ def main():
     logging.info(
         f"> Searching for reviews apps not updated for at least {args.max_age} hours..."
     )
-    for namespace in review_app_namespaces:
+    for namespace in tqdm(
+        review_app_namespaces,
+        leave=False,
+    ):
         try:
             chart = get_helm_chart(namespace)
         except:
             logging.error(f"> Error getting chart for {namespace}")
-        last_updated = dateutil.parser.parse(chart["updated"])
+        last_updated = parser.parse(chart["updated"])
         delta = current_time - last_updated
         if delta > timedelta(hours=args.max_age):
             logging.debug(
@@ -144,5 +136,6 @@ def main():
     logging.info(
         f"> Found {len(to_be_deleted)} review apps to be deleted: {json.dumps(to_be_deleted,indent=2).strip('[],')}"
     )
-    logging.debug(f"> Writing output to GITHUB_OUTPUT...")
+    logging.info(f"> Writing output to GITHUB_OUTPUT...")
+    logging.debug(f"> {to_be_deleted=}")
     write_output(to_be_deleted)
