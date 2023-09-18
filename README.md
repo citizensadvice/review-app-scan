@@ -14,7 +14,7 @@ It replaces the fragile Bash scripting used in the `review-app-scan` Actions wor
 
 1. Install the package with `pip3 install git+https://github.com/citizensadvice/review-app-scan@<version number>`
 2. Run with `python3 -m review_app_scan <review app name> <namespace>`
-3. Once run, the script will output a file called `GITHUB_OUTPUT`. This will be picked up by the Actions runner and can be used as the input for another steps matrix, for example:
+3. Once run, the script will output a file referenced to in the`GITHUB_OUTPUT` environment variable. This will be picked up by the Actions runner and can be used as the input for another steps matrix, for example:
 
 ```yaml
   trigger_destroy:
