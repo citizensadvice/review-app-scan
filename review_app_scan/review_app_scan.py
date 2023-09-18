@@ -1,4 +1,4 @@
-import argparse, re, json, subprocess, logging
+import argparse, re, json, subprocess, logging, os
 from datetime import datetime, timezone, timedelta
 from dateutil import parser
 from tqdm import tqdm
@@ -64,13 +64,14 @@ def filter_namespaces(namespaces: list[str], review_app_name: str) -> list[str]:
 
 
 def write_output(namespace_list: list[str]):
+    GITHUB_OUTPUT = os.environ.get("GITHUB_OUTPUT") or "GITHUB_OUTPUT"
     pr_list = []
     for namespace in namespace_list:
         pr_list.append(namespace.split("-")[1])
     dump = json.dumps({"pr_numbers": pr_list})
     output = f"matrix={dump}"
     logging.debug(f"> {output=}")
-    with open("GITHUB_OUTPUT", "w") as f:
+    with open(GITHUB_OUTPUT, "a") as f:
         f.write(output)
 
 
