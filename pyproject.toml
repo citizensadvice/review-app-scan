@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "review-app-scan"
-version = "1.2.0"
+version = "1.2.2"
 description = ""
 authors = ["Matthew Cane <matthew.cane@citizensadvice.org.uk>"]
 readme = "README.md"

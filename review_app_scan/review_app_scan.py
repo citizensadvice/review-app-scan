@@ -68,7 +68,7 @@ def write_output(namespace_list: list[str]):
     pr_list = []
     for namespace in namespace_list:
         pr_list.append(namespace.split("-")[1])
-    dump = json.dumps({"pr_numbers": pr_list})
+    dump = json.dumps({"pr_numbers": pr_list}, separators=(",", ":"))
     output = f"matrix={dump}"
     logging.debug(f"> {output=}")
     with open(GITHUB_OUTPUT, "a") as f:
