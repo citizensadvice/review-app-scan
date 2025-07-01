@@ -12,6 +12,8 @@ It replaces the fragile Bash scripting used in the `review-app-scan` Actions wor
 
 ## Usage
 
+### Github Actions
+
 1. Install the package with `pip3 install git+https://github.com/citizensadvice/review-app-scan@<version number>`
 2. Run with `python3 -m review_app_scan <review app name> <namespace>`
 3. Once run, the script will output a file referenced to in the`GITHUB_OUTPUT` environment variable. This will be picked up by the Actions runner and can be used as the input for another steps matrix, for example:
@@ -30,6 +32,16 @@ It replaces the fragile Bash scripting used in the `review-app-scan` Actions wor
 ```
 
 The above example job will trigger the `review-app-destroy` workflow for each of the outdated review apps, passing in a PR number for each one.
+
+### Locally
+
+To run the script locally for testing, you can use the following command:
+
+```bash
+poetry run scan <review app name> <namespace>
+```
+
+This will output a file named `GITHUB_OUTPUT` in the current working directory.
 
 ## Arguments
 

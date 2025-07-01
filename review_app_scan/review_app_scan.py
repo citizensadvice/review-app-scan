@@ -1,8 +1,14 @@
-import argparse, re, json, subprocess, logging, os
-from datetime import datetime, timezone, timedelta
+import json
+import logging
+import os
+import re
+import subprocess
+from argparse import ArgumentParser, Namespace
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
 from dateutil import parser
 from tqdm import tqdm
-from typing import Any
 
 
 def run_subprocess(command: str):
@@ -37,7 +43,7 @@ def get_subnamespaces(namespace: str) -> list[str]:
     return subnamespaces
 
 
-def get_helm_chart(namespace: str) -> dict[Any]:
+def get_helm_chart(namespace: str) -> dict[str, Any]:
     """Returns a dictionary of the helm chart for the given namespace"""
     logging.debug(f"> Getting helm charts for {namespace}...")
     helm_data = run_subprocess(
@@ -51,7 +57,7 @@ def get_helm_chart(namespace: str) -> dict[Any]:
 
 def filter_namespaces(namespaces: list[str], review_app_name: str) -> list[str]:
     print(f"> Finding {review_app_name} review app namespaces...")
-    regex = f"review-\d{{1,4}}-{review_app_name}"
+    regex = f"review-\d+-{review_app_name}"
     logging.debug(f"> {regex=}")
     filtered_namespaces = []
     for namespace in namespaces:
@@ -75,8 +81,8 @@ def write_output(namespace_list: list[str]):
         f.write(output)
 
 
-def get_arguments() -> dict:
-    argparser = argparse.ArgumentParser()
+def get_arguments() -> Namespace:
+    argparser = ArgumentParser()
     argparser.add_argument(
         "review_app_name",
         type=str,
@@ -135,8 +141,8 @@ def main():
             )
             to_be_deleted.append(namespace)
     logging.info(
-        f"> Found {len(to_be_deleted)} review apps to be deleted: {json.dumps(to_be_deleted,indent=2).strip('[],')}"
+        f"> Found {len(to_be_deleted)} review apps to be deleted: {json.dumps(to_be_deleted, indent=2).strip('[],')}"
     )
-    logging.info(f"> Writing output to GITHUB_OUTPUT...")
+    logging.info("> Writing output to GITHUB_OUTPUT...")
     logging.debug(f"> {to_be_deleted=}")
     write_output(to_be_deleted)
