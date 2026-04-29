@@ -33,11 +33,17 @@ def get_subnamespaces(namespace: str) -> list[str]:
     """Returns a string list of all the subnamespaces in the given namespace."""
     subnamespaces = []
     print("> Getting subnamespaces...")
-    response = run_subprocess(
-        f"kubectl get --namespace {namespace} subnamespaceanchors.hnc.x-k8s.io -o json"
-    )
-    for items in response["items"]:
-        subnamespaces.append(items["metadata"]["name"])
+    response = run_subprocess(f"kubectl get --namespace {namespace} configmap -o json")
+    for item in response["items"]:
+        if (
+            "citizensadvice.org.uk/subnamespace-anchor"
+            in item["metadata"].get("annotations", {}).keys()
+        ):
+            subnamespaces.append(
+                item["metadata"]["annotations"][
+                    "citizensadvice.org.uk/subnamespace-name"
+                ]
+            )
     logging.debug(f"> {subnamespaces=}")
     print(f"> Found  {len(subnamespaces)} subnamespaces in namespace {namespace}.")
     return subnamespaces
